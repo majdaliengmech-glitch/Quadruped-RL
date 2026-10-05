@@ -1,6 +1,38 @@
 # Training and export
 
-The policy was trained in Google Colab with **MuJoCo Playground** (Go1 joystick task, flat terrain) and **Brax PPO**, then converted to a NumPy file so the ROS node needs no JAX.
+The policy was trained in Google Colab with **MuJoCo Playground** (`Go1JoystickFlatTerrain`) and **Brax PPO**, then converted to a NumPy file so the ROS node needs no JAX.
+
+## The training notebook: `locomotion.ipynb`
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/majdaliengmech-glitch/Quadruped-RL/blob/main/locomotion.ipynb)
+
+Open it in Colab with a GPU runtime (*Runtime → Change runtime type*). The sections are:
+
+| Section | What it does |
+|---|---|
+| 1. Setup | installs JAX (CUDA 12), Brax, MuJoCo/MJX, Playground, Warp, mediapy; checks the GPU, enables headless EGL rendering, and patches `jax.device_put_replicated` for newer JAX |
+| 2. Training budget | **the only cell to edit**: `num_timesteps` and `num_evals` per run, `SEED`, `BASE_DIR`, and `QUICK_TEST` (divides every budget by 20 for a smoke test). Prints a time estimate before anything trains |
+| 3. Helpers | `train(name, env_cfg, restore_from)`: Playground's default PPO config with the hard-coded budget, domain randomisation from the registry, a live reward plot, a checkpoint every evaluation, and `final_params` + `env_config.json` + `ppo_params.json` at the end |
+| 4. Go1 joystick | trains the walking policy used in this project, then rolls it out with a constant command or a forward ramp (+0.25 m/s every 200 steps), renders a video and plots foot heights and velocity tracking |
+| 5. Go1 handstand | an extra experiment: trains a handstand policy (100 M steps), then fine-tunes it from the last checkpoint with energy and joint-acceleration penalties (50 M steps). Not used in ROS |
+| 7. Summary | steps, episodes, compile and training time and final reward per run |
+
+Budgets and rough cost (A100 / RTX 4090 class; L4 / T4 GPUs are several times slower):
+
+| Run | Environment | Steps | Est. training time |
+|---|---|---:|---|
+| `joystick` | `Go1JoystickFlatTerrain` | 200 M | ~8 min + JIT |
+| `handstand` | `Go1Handstand` | 100 M | ~8 min + JIT |
+| `handstand_finetune` | `Go1Handstand` (from `handstand`) | 50 M | ~4 min + JIT |
+
+Everything is written to `runs/` (set `BASE_DIR` to a Google Drive folder so a Colab disconnect does not lose it): `runs/checkpoints/<run>/<step>/`, `runs/checkpoints/<run>/final_params`, the two JSON configs, and the rendered `.mp4` rollouts.
+
+### From the notebook to ROS
+
+1. Download `runs/checkpoints/joystick/` (`env_config.json`, `ppo_params.json`, `final_params`) into `Joystick_model/`.
+2. Save the parameters as a pickle (`joystick_params.pkl`) and convert them with `export_policy.py` (below) into `src/policy_node/config/policy_weights.npz`.
+3. Copy `action_scale`, the command range and the gains from `env_config.json` into `src/go_description/config/robot_params.yaml` if they changed.
+4. `colcon build` and restart `bringup.launch.py`.
 
 ## Artefacts in `Joystick_model/`
 
@@ -25,6 +57,7 @@ The deployed policy is `src/policy_node/config/policy_weights.npz`, produced fro
 | Networks | policy and value MLPs 512‑256‑128; value uses the privileged state |
 | Observation noise | gyro 0.2, gravity 0.05, joint pos 0.03, joint vel 1.5, linvel 0.1 |
 | Perturbation kicks | disabled |
+| Domain randomisation | Playground default for Go1 (friction, armature, torso centre of mass, link masses, …) via `registry.get_domain_randomizer` |
 
 Main reward terms: `tracking_lin_vel` 1.0, `tracking_ang_vel` 0.5, `pose` 0.5, `feet_air_time` 0.1, `orientation` −5.0, `feet_clearance` −2.0, `stand_still` −1.0, `lin_vel_z` −0.5, `max_foot_height` 0.1 m. The full list is in `env_config.json`.
 
@@ -52,15 +85,21 @@ Observation layout (inferred from the saved normaliser and the Playground Go1 jo
 
 ## Evaluation in MuJoCo
 
-The two plots below come from one evaluation rollout in Colab (1000 steps).
+The two plots below come from the notebook's joystick rollout (1000 steps, constant command).
 
 ![Foot heights and forward velocity tracking](images/policy_eval_feet_and_vx.jpg)
 
 ![Sideways velocity and yaw-rate tracking](images/policy_eval_vy_and_yaw.jpg)
 
-- **Foot heights:** all four feet reach ~0.10 m swing height, matching `max_foot_height` 0.1, with a regular gait on every leg.
-- **Yaw rate:** follows the command (0) closely.
-- **vx and vy in this rollout do not track the command:** with vx commanded at 1.0 m/s the 10‑step average stays near −0.3 m/s, and vy drifts beyond −0.8. The robot does walk forward correctly in Gazebo, so this rollout is more likely affected by the velocity frame or sign used in the plotting cell than by the policy. **Re-check the evaluation code before quoting these numbers.**
+- **Foot heights:** all four feet reach the 0.10 m target swing height (`max_foot_height`) with a regular gait on every leg.
+- **Yaw rate:** follows the command closely.
+- **vx / vy look wrong, but the plot is what is wrong.** The rollout records `env.get_global_linvel(...)`, the **world-frame** velocity, while the command is in the **body frame**. As soon as the robot is not facing world +x, world dx and dy no longer match the forward command. Here world dx ≈ −0.3 m/s and world dy runs past −0.8 m/s: a speed of roughly 0.9–1.0 m/s in a rotated direction, consistent with the 1.0 m/s command. The yaw plot is unaffected because the gyro is already body-frame. The policy also walks forward correctly in Gazebo.
+
+To plot body-frame tracking, change the line in the rollout cell to use the robot's local velocity:
+
+```python
+out["linvel"].append(env.get_local_linvel(state.data))   # body frame, same as the command
+```
 
 ## Converting a new policy
 

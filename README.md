@@ -10,7 +10,7 @@ The policy is *blind*: it only turns a velocity command (vx, vy, yaw rate) into 
 
 | Stage | Status |
 |---|---|
-| Train a joystick policy in MuJoCo Playground (Brax PPO) | ✅ `Joystick_model/` |
+| Train a joystick policy in MuJoCo Playground (Brax PPO) | ✅ [`locomotion.ipynb`](locomotion.ipynb) → `Joystick_model/` |
 | Export the trained MuJoCo model to URDF + meshes + gains | ✅ `src/tools/mjcf_to_urdf.py` |
 | Robot stands and walks in Gazebo (NumPy policy at 50 Hz, PD at 500 Hz) | ✅ |
 | Keyboard and gamepad driving through `twist_mux` with a deadman button | ✅ |
@@ -80,7 +80,7 @@ Quadruped-RL/
 │   ├── policy_node/         policy_node, pd_controller, odom_tf, policy_weights.npz
 │   ├── go_navigation/       teleop, SLAM, Nav2 params, maps, goto / patrol / obstacles / reset_robot
 │   └── tools/               exporter, policy converter, world generator (not ROS packages)
-└── Quadruped-RL.ipynb       Colab notebook placeholder
+└── locomotion.ipynb         Colab training notebook (MuJoCo Playground + Brax PPO)
 ```
 
 ## Documentation
@@ -89,7 +89,7 @@ Quadruped-RL/
 |---|---|
 | [Installation](docs/installation.md) | ROS 2 / Gazebo packages, Python venv, build |
 | [Architecture](docs/architecture.md) | Nodes, topics, frames, packages, design decisions |
-| [Training and export](docs/training.md) | Training configuration, observation layout, policy export, URDF export |
+| [Training and export](docs/training.md) | Colab notebook, training configuration, observation layout, policy export, URDF export |
 | [Simulation and teleop](docs/simulation.md) | Bringing the robot up in Gazebo, standing, keyboard and joystick |
 | [Navigation](docs/navigation.md) | Mapping, localisation, single goals, patrol, live obstacles, tuning speed |
 | [Results](docs/results.md) | Measured performance, plots, policy evaluation |
