@@ -1,0 +1,11 @@
+# Patrol route for factory.sdf / maps/factory.yaml. [x, y, yaw_deg] in the MAP frame
+# (map frame = world frame: the map was built from the spawn point at the origin).
+# Each point has >= 2.3 m clearance on maps/factory.pgm, and every leg was checked with A* on the
+# map inflated by the robot radius. One lap ~ 66 m (~3-4 min at vx_max 0.4).
+# Avoided on purpose: the forklift forks (6 cm tall, below the lidar) around (9.5, -4.5) and the
+# smeared north wall of the SLAM map.
+waypoints:
+  - [12.0,  0.0,    0]   # east end of the main aisle
+  - [ 0.0, -7.5, -90]   # south open area, west of the shipping crates
+  - [-13.0, 0.5,  180]   # west end of the main aisle, past the conveyor zone
+  - [ 0.0,  7.0,   90]   # north bay between the pallet racks and the CNC machines

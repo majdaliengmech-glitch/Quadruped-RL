@@ -1,0 +1,41 @@
+# ---------- colcon workspace output (rebuilt with `colcon build`) ----------
+build/
+install/
+log/
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.venv/
+venv/
+*_venv/
+.ipynb_checkpoints/
+
+# ---------- ROS / Gazebo run artefacts ----------
+# `ros2 run tf2_tools view_frames` output
+frames_*.gv
+frames_*.pdf
+# rosbags and patrol / experiment logs (patrol writes to ~/.ros/patrol_logs by default)
+rosbag2_*/
+*.db3
+*.mcap
+patrol_*.csv
+core
+core.*
+
+# ---------- Stale / broken files kept locally only ----------
+# old exporter output (an outdated copy of src/go_description, ~10 MB of duplicate meshes)
+src/tools/ros2_ws/
+# truncated, unreadable save (199 bytes); the real policy is src/policy_node/config/policy_weights.npz
+Joystick_model/joystick.npz
+
+# ---------- Editors / OS ----------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db

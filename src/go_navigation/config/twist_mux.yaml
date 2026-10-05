@@ -1,0 +1,8 @@
+twist_mux:
+  ros__parameters:
+    use_sim_time: true
+    use_stamped: false     # teleop_twist_joy, Nav2 remap and policy_node all use plain Twist
+    topics:
+      joystick:   {topic: cmd_vel_joy,       timeout: 0.5, priority: 100}
+      keyboard:   {topic: cmd_vel_key,       timeout: 1.0, priority: 90}   # teleop_twist_keyboard publishes once per key press
+      navigation: {topic: cmd_vel,           timeout: 0.5, priority: 10}  # Nav2's final output

@@ -1,0 +1,14 @@
+# Normalise line endings for text, never touch binaries
+* text=auto eol=lf
+
+*.stl  binary
+*.npz  binary
+*.pkl  binary
+*.pgm  binary
+*.png  binary
+*.jpg  binary
+*.pdf  binary
+
+# Generated Gazebo world: hide from diffs and language stats
+src/go_gazebo/worlds/factory.sdf linguist-generated=true -diff
+*.ipynb linguist-documentation=true

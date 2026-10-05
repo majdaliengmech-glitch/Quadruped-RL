@@ -1,0 +1,7 @@
+# Patrol route for patrol_room.sdf / maps/room.yaml (12 x 12 m room). [x, y, yaw_deg], MAP frame.
+# use: ros2 run go_navigation patrol --ros-args -p waypoints_file:=<this file>
+waypoints:
+  - [ 3.0,  3.0,    0]
+  - [ 3.0, -3.0,  -90]
+  - [-3.0, -3.0,  180]
+  - [-3.0,  3.0,   90]
